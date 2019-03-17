@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import numpy as np
 import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
@@ -28,6 +29,7 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
+        rospy.loginfo('init waypoint_updater')
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -56,7 +58,7 @@ class WaypointUpdater(object):
 
     def get_closest_waypoint_idx(self):
         x = self.pose.pose.position.x
-        y = self.pose.pose.position.you
+        y = self.pose.pose.position.y
         closest_idx = self.waypoint_tree.query([x,y],1)[1]
 
         # Check if closes is ahead or behind vehicle
@@ -65,9 +67,9 @@ class WaypointUpdater(object):
 
         # Equation for hyperplane through closes_coords
         # TODO: understand what's going on
-        cl_vect = np.array(closes_coords)
+        cl_vect = np.array(closest_coord)
         prev_vect = np.array(prev_coord)
-        pos_vect = np.array(x,y)
+        pos_vect = np.array([x,y])
 
         val = np.dot(cl_vect - prev_vect, pos_vect - cl_vect)
 
@@ -79,7 +81,6 @@ class WaypointUpdater(object):
         lane = Lane()
         lane.header = self.base_waypoints.header
         lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx + LOOKAHEAD_WPS]
-        print(lane)
         self.final_waypoints_pub.publish(lane)
 
     def pose_cb(self, msg):
